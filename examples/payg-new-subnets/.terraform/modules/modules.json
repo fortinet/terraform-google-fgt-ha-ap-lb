@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"fgt_ha","Source":"git::https://github.com/40net-cloud/fortigate-gcp-ha-ap-lb-terraform.git","Dir":".terraform/modules/fgt_ha"}]}
