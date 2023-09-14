@@ -1,5 +1,5 @@
 module "fgt_ha" {
-  source        = "git::github.com/fortinet/fortigate-gcp-ha-ap-lb-terraform?ref=v1.0.1"
+  source        = "git::github.com/40net-cloud/fortigate-gcp-ha-ap-lb-terraform?ref=v1.0.0"
 
   prefix        = "fgt-example-byol"
   region        = "us-central1"
