@@ -8,7 +8,7 @@ resource "google_compute_image" "fgt_724_gvnic" {
 }
 
 module "fgt_ha" {
-  source        = "git::github.com/fortinet/terraform-google-fgt-ha-ap-lb?ref=v1.0.0"
+  source        = "git::github.com/fortinet/terraform-google-fgt-ha-ap-lb"
 
   region        = "us-central1"
   subnets       = [ "external", "internal", "hasync", "mgmt" ]
