@@ -1,5 +1,5 @@
 module "fgt_ha" {
-  source        = "git::github.com/fortinet/terraform-google-fgt-ha-ap-lb?ref=v1.0.0"
+  source        = "git::github.com/fortinet/terraform-google-fgt-ha-ap-lb"
 
   image_family  = "fortigate-arm64-72-payg"
   machine_type  = "t2a-standard-4"

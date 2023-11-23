@@ -252,7 +252,7 @@ resource "google_secret_manager_secret" "api-secret" {
   secret_id              = var.api_token_secret_name
 
   replication {
-    automatic            = true
+    auto {}
   }
 }
 
