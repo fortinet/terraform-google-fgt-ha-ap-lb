@@ -24,3 +24,7 @@ output api_key {
 }
 
 
+output ilb_address {
+  value = google_compute_address.ilb.address
+  description = "Address of ILB. Can be used for PBR creation"
+}
