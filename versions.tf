@@ -7,5 +7,11 @@ terraform {
     google-beta = {
       source = "hashicorp/google-beta"
     }
+    cloudinit = {
+      source = "hashicorp/cloudinit"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
   }
 }
