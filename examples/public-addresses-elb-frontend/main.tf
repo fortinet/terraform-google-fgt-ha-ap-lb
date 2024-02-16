@@ -10,3 +10,7 @@ module "fgt_ha" {
     "35.1.2.3"  # this will attach existing address (if found in your project and region, and if not used)
   ]
 }
+
+output "frontends" {
+  value = module.fgt_ha.frontends
+}

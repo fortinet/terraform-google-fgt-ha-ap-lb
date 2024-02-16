@@ -27,7 +27,7 @@ variable "subnets" {
 variable "frontends" {
   type        = list(string)
   default     = []
-  description = "List of public IP names to be linked or created as ELB frontend."
+  description = "List of names for external IP addresses to be created or existing IP addresses to be linked as ELB frontend."
   validation {
     condition     = length(var.frontends) < 33
     error_message = "You can define up to 32 External IP addresses in this module."

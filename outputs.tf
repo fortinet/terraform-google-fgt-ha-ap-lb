@@ -28,3 +28,8 @@ output "ilb_address" {
   value       = google_compute_address.ilb.address
   description = "Address of ILB. Can be used for PBR creation"
 }
+
+output "frontends" {
+  value = local.eip_all
+  description = "Map of all external IP addresses bound to FortiGate cluster"
+}

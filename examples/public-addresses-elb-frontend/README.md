@@ -18,6 +18,8 @@ frontends = [
 
 Non-existing, in-use and located in a different region addresses will be silently ignored.
 
+**NOTE: ** "existing IP addresses" must exist before running this module. Creating addresses in parent module and passing them to this module in a single `terraform apply` run is not supported and will fail the terraform plan.
+
 ## Applied changes
 
 This module will:
