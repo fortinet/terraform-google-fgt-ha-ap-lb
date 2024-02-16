@@ -4,6 +4,6 @@ module "fgt_ha" {
   region        = "us-central1"
   subnets       = [ "external", "internal", "hasync", "mgmt" ]
 
-  flexvm_tokens = ["B1C38EDAEA0D4E568D2F", "9E8FF67B64924C3B82E1"]
+  flex_tokens   = ["B1C38EDAEA0D4E568D2F", "9E8FF67B64924C3B82E1"]
   image_family  = "fortigate-70-byol"
 }

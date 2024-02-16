@@ -65,66 +65,52 @@ resource "google_compute_disk" "logdisk" {
 }
 
 
+data "cloudinit_config" "fgt" {
+  count = 2
 
-locals {
-  config_active_noflex   = templatefile("${path.module}/fgt-base-config.tftpl", {
-    hostname               = "${local.prefix}vm-${local.zones_short[0]}"
-    unicast_peer_ip        = google_compute_address.hasync_priv[1].address
-    unicast_peer_netmask   = cidrnetmask(data.google_compute_subnetwork.subnets[2].ip_cidr_range)
-    ha_prio                = 1
-    healthcheck_port       = var.healthcheck_port
-    api_key                = random_string.api_key.result
-    ext_ip                 = google_compute_address.ext_priv[0].address
-    ext_gw                 = data.google_compute_subnetwork.subnets[0].gateway_address
-    int_ip                 = google_compute_address.int_priv[0].address
-    int_gw                 = data.google_compute_subnetwork.subnets[1].gateway_address
-    int_cidr               = data.google_compute_subnetwork.subnets[1].ip_cidr_range
-    hasync_ip              = google_compute_address.hasync_priv[0].address
-    mgmt_ip                = google_compute_address.mgmt_priv[0].address
-    mgmt_gw                = data.google_compute_subnetwork.subnets[3].gateway_address
-    ilb_ip                 = google_compute_address.ilb.address
-    api_acl                = var.api_acl
-    api_accprofile         = var.api_accprofile
-    frontend_eips          = local.eip_all
-    fgt_config             = var.fgt_config
-    probe_loopback_ip      = var.probe_loopback_ip
-  })
+  gzip          = false
+  base64_encode = false
 
-  config_passive_noflex  = templatefile("${path.module}/fgt-base-config.tftpl", {
-    hostname               = "${local.prefix}vm-${local.zones_short[1]}"
-    unicast_peer_ip        = google_compute_address.hasync_priv[0].address
-    unicast_peer_netmask   = cidrnetmask(data.google_compute_subnetwork.subnets[2].ip_cidr_range)
-    ha_prio                = 0
-    healthcheck_port       = var.healthcheck_port
-    api_key                = random_string.api_key.result
-    ext_ip                 = google_compute_address.ext_priv[1].address
-    ext_gw                 = data.google_compute_subnetwork.subnets[0].gateway_address
-    int_ip                 = google_compute_address.int_priv[1].address
-    int_gw                 = data.google_compute_subnetwork.subnets[1].gateway_address
-    int_cidr               = data.google_compute_subnetwork.subnets[1].ip_cidr_range
-    hasync_ip              = google_compute_address.hasync_priv[1].address
-    mgmt_ip                = google_compute_address.mgmt_priv[1].address
-    mgmt_gw                = data.google_compute_subnetwork.subnets[3].gateway_address
-    ilb_ip                 = google_compute_address.ilb.address
-    api_acl                = var.api_acl
-    api_accprofile         = var.api_accprofile
-    frontend_eips          = local.eip_all
-    fgt_config             = var.fgt_config
-    probe_loopback_ip      = var.probe_loopback_ip
-  })
+  dynamic "part" {
+    for_each = try(var.flex_tokens[count.index], "") == "" ? [] : [1]
+    content {
+      filename     = "license"
+      content_type = "text/plain; charset=\"us-ascii\""
+      content      = <<-EOF
+        LICENSE-TOKEN: ${var.flex_tokens[count.index]}
+        EOF
+    }
+  }
 
-  config_active_flex     = templatefile("${path.module}/fgt-base-flex-wrapper.tftpl", {
-    fgt_config   = local.config_active_noflex
-    flexvm_token = var.flexvm_tokens[0]
+  part {
+    filename     = "config"
+    content_type = "text/plain; charset=\"us-ascii\""
+    content = templatefile("${path.module}/fgt-base-config.tftpl", {
+      hostname             = "${local.prefix}vm-fgt${count.index + 1}-${local.zones_short[count.index]}"
+      unicast_peer_ip      = google_compute_address.hasync_priv[(count.index + 1) % 2].address #
+      unicast_peer_netmask = cidrnetmask(data.google_compute_subnetwork.subnets[2].ip_cidr_range)
+      ha_prio              = (count.index + 1) % 2 #
+      healthcheck_port     = var.healthcheck_port
+      api_key              = random_string.api_key.result
+      ext_ip               = google_compute_address.ext_priv[count.index].address
+      ext_gw               = data.google_compute_subnetwork.subnets[0].gateway_address
+      int_ip               = google_compute_address.int_priv[count.index].address
+      int_gw               = data.google_compute_subnetwork.subnets[1].gateway_address
+      int_cidr             = data.google_compute_subnetwork.subnets[1].ip_cidr_range
+      hasync_ip            = google_compute_address.hasync_priv[count.index].address
+      mgmt_ip              = google_compute_address.mgmt_priv[count.index].address
+      mgmt_gw              = data.google_compute_subnetwork.subnets[3].gateway_address
+      ilb_ip               = google_compute_address.ilb.address
+      api_acl              = var.api_acl
+      api_accprofile       = var.api_accprofile
+      frontend_eips        = local.eip_all
+      fgt_config           = var.fgt_config
+      probe_loopback_ip    = var.probe_loopback_ip
     })
-  config_passive_flex    = templatefile("${path.module}/fgt-base-flex-wrapper.tftpl", {
-    fgt_config   = local.config_passive_noflex
-    flexvm_token = var.flexvm_tokens[1]
-    })
-
-  config_active  = length(var.flexvm_tokens[0])>1 ? local.config_active_flex : local.config_active_noflex
-  config_passive = length(var.flexvm_tokens[1])>1 ? local.config_passive_flex : local.config_passive_noflex
+  }
 }
+
+
 
 resource "google_compute_instance" "fgt-vm" {
   count                  = 2
@@ -152,7 +138,7 @@ resource "google_compute_instance" "fgt-vm" {
   }
 
   metadata = {
-    user-data            = (count.index == 0 ? local.config_active : local.config_passive )
+    user-data            = data.cloudinit_config.fgt[count.index].rendered #(count.index == 0 ? local.config_active : local.config_passive )
     license              = fileexists(var.license_files[count.index]) ? file(var.license_files[count.index]) : null
     serial-port-enable   = true
   }
