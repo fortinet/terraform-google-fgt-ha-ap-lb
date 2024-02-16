@@ -4,12 +4,12 @@ output "fgt_mgmt_eips" {
 }
 
 output "fgt_password" {
-  value       = google_compute_instance.fgt-vm[0].instance_id
+  value       = google_compute_instance.fgt_vm[0].instance_id
   description = "Initial admin password"
 }
 
 output "fgt_self_links" {
-  value       = google_compute_instance.fgt-vm[*].self_link
+  value       = google_compute_instance.fgt_vm[*].self_link
   description = "List of 2 self-links to FortiGate VMs"
 }
 

@@ -10,10 +10,10 @@ resource "google_compute_region_backend_service" "ilb_bes" {
   network  = data.google_compute_subnetwork.subnets[1].network
 
   backend {
-    group = google_compute_instance_group.fgt-umigs[0].self_link
+    group = google_compute_instance_group.fgt_umigs[0].self_link
   }
   backend {
-    group = google_compute_instance_group.fgt-umigs[1].self_link
+    group = google_compute_instance_group.fgt_umigs[1].self_link
   }
 
   health_checks = [google_compute_region_health_check.health_check.self_link]

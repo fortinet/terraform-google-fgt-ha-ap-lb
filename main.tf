@@ -112,7 +112,7 @@ data "cloudinit_config" "fgt" {
 
 
 
-resource "google_compute_instance" "fgt-vm" {
+resource "google_compute_instance" "fgt_vm" {
   count = 2
 
   zone           = local.zones[count.index]
@@ -181,16 +181,16 @@ resource "google_compute_region_health_check" "health_check" {
   }
 }
 
-resource "google_compute_instance_group" "fgt-umigs" {
+resource "google_compute_instance_group" "fgt_umigs" {
   count = 2
 
   name      = "${local.prefix}umig${count.index}-${local.zones_short[count.index]}"
-  zone      = google_compute_instance.fgt-vm[count.index].zone
-  instances = [google_compute_instance.fgt-vm[count.index].self_link]
+  zone      = google_compute_instance.fgt_vm[count.index].zone
+  instances = [google_compute_instance.fgt_vm[count.index].self_link]
 }
 
 # Firewall rules
-resource "google_compute_firewall" "allow-mgmt" {
+resource "google_compute_firewall" "allow_mgmt" {
   name          = "${local.prefix}fw-mgmt-allow-admin"
   network       = data.google_compute_subnetwork.subnets[3].network
   source_ranges = var.admin_acl
@@ -201,7 +201,7 @@ resource "google_compute_firewall" "allow-mgmt" {
   }
 }
 
-resource "google_compute_firewall" "allow-hasync" {
+resource "google_compute_firewall" "allow_hasync" {
   name        = "${local.prefix}fw-hasync-allow-fgt"
   network     = data.google_compute_subnetwork.subnets[2].network
   source_tags = ["fgt"]
@@ -212,7 +212,7 @@ resource "google_compute_firewall" "allow-hasync" {
   }
 }
 
-resource "google_compute_firewall" "allow-port1" {
+resource "google_compute_firewall" "allow_port1" {
   name          = "${local.prefix}fw-ext-allowall"
   network       = data.google_compute_subnetwork.subnets[0].network
   source_ranges = ["0.0.0.0/0"]
@@ -222,7 +222,7 @@ resource "google_compute_firewall" "allow-port1" {
   }
 }
 
-resource "google_compute_firewall" "allow-port2" {
+resource "google_compute_firewall" "allow_port2" {
   name          = "${local.prefix}fw-int-allowall"
   network       = data.google_compute_subnetwork.subnets[1].network
   source_ranges = ["0.0.0.0/0"]
@@ -233,7 +233,7 @@ resource "google_compute_firewall" "allow-port2" {
 }
 
 # Save api_key to Secret Manager if var.api_token_secret_name is set
-resource "google_secret_manager_secret" "api-secret" {
+resource "google_secret_manager_secret" "api_secret" {
   count     = var.api_token_secret_name != "" ? 1 : 0
   secret_id = var.api_token_secret_name
 
@@ -244,6 +244,6 @@ resource "google_secret_manager_secret" "api-secret" {
 
 resource "google_secret_manager_secret_version" "api_key" {
   count       = var.api_token_secret_name != "" ? 1 : 0
-  secret      = google_secret_manager_secret.api-secret[0].id
+  secret      = google_secret_manager_secret.api_secret[0].id
   secret_data = random_string.api_key.id
 }
