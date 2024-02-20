@@ -1,7 +1,10 @@
 module "fgt_ha" {
   source        = "git::github.com/fortinet/terraform-google-fgt-ha-ap-lb"
 
-  image_family  = "fortigate-arm64-72-payg"
+  image  = {
+    arch = "arm"
+    license = "payg"
+  }
   machine_type  = "t2a-standard-4"
   nic_type      = "GVNIC"
 

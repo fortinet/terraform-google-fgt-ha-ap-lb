@@ -5,5 +5,7 @@ module "fgt_ha" {
   subnets       = [ "external", "internal", "hasync", "mgmt" ]
 
   license_files = ["dummy_lic1.lic", "dummy_lic2.lic"]
-  image_family = "fortigate-70-byol"
+  image = {
+    family = "fortigate-70-byol"
+  }
 }

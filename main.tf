@@ -1,10 +1,19 @@
-# Find the public image to be used for deployment. You can indicate image by either
-# image family or image name. By default, the Fortinet's public project and newest
-# 72 PAYG image is used.
-data "google_compute_image" "fgt_image" {
-  project = var.image_project
-  family  = var.image_name == "" ? var.image_family : null
-  name    = var.image_name != "" ? var.image_name : null
+terraform {
+  required_version = ">= 1.0.1"
+  required_providers {
+    google = {
+      source = "hashicorp/google"
+    }
+    google-beta = {
+      source = "hashicorp/google-beta"
+    }
+    cloudinit = {
+      source = "hashicorp/cloudinit"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
+  }
 }
 
 
@@ -110,8 +119,33 @@ data "cloudinit_config" "fgt" {
   }
 }
 
+#
+# Find marketplace image either based on version+arch+lic/family ...
+#
+module "fgtimage" {
+  count = var.image.project == "fortigcp-project-001" ? 1 : 0
+
+  source = "./modules/fgt-get-image"
+  ver    = var.image.version
+  arch   = var.image.arch
+  lic    = "${try(var.license_files[0], "")}${try(var.flex_tokens[0], "")}" != "" ? "byol" : var.image.license
+  family = var.image.version=="" ? var.image.family : ""
+}
+
+#
+# ... or get the custom one
+#
+data "google_compute_image" "custom" {
+  count = var.image.project == "fortigcp-project-001" ? 0 : 1
+
+  project = var.image.project
+  name    = var.image.name
+}
 
 
+# 
+# Deploy VMs
+#
 resource "google_compute_instance" "fgt_vm" {
   count = 2
 
@@ -124,7 +158,7 @@ resource "google_compute_instance" "fgt_vm" {
 
   boot_disk {
     initialize_params {
-      image  = data.google_compute_image.fgt_image.self_link
+      image  = var.image.project == "fortigcp-project-001" ? module.fgtimage[0].self_link : data.google_compute_image.custom[0].self_link
       labels = var.labels
     }
   }
@@ -139,7 +173,7 @@ resource "google_compute_instance" "fgt_vm" {
 
   metadata = {
     user-data          = data.cloudinit_config.fgt[count.index].rendered #(count.index == 0 ? local.config_active : local.config_passive )
-    license            = fileexists(var.license_files[count.index]) ? file(var.license_files[count.index]) : null
+    license            = try(fileexists(var.license_files[count.index]), false) ? file(var.license_files[count.index]) : null
     serial-port-enable = true
   }
 
@@ -164,6 +198,13 @@ resource "google_compute_instance" "fgt_vm" {
     nic_type   = var.nic_type
     access_config {
       nat_ip = google_compute_address.mgmt_pub[count.index].address
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = !(("${try(var.license_files[0], "")}${try(var.flex_tokens[0], "")}" != "") && strcontains(try(module.fgtimage[0].image.name, ""), "ondemand"))
+      error_message = "You provided a FortiGate BYOL (or Flex) license, but you're attempting to deploy a PAYG image. This would result in a double license fee. \nUpdate module's 'image' parameter to fix this error.\n\nCurrent var.image value: \n  {%{for k, v in var.image}%{if tostring(v) != ""}\n    ${k}=${v}%{endif}%{endfor}\n  }"
     }
   }
 } //fgt-vm

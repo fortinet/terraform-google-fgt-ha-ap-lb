@@ -54,7 +54,7 @@ variable "admin_acl" {
 
 variable "license_files" {
   type        = list(string)
-  default     = ["null", "null"]
+  default     = ["", ""]
   description = "List of license (.lic) files to be applied for BYOL instances."
 }
 
@@ -88,11 +88,11 @@ variable "logdisk_size" {
 
 variable "image_family" {
   type        = string
-  description = "Image family. Overriden by providing explicit image name"
-  default     = "fortigate-72-payg"
+  description = "(deprecated) Image family. Overriden by providing explicit image name"
+  default     = ""
   validation {
-    condition     = can(regex("^fortigate-(arm64-)?[67][0-9]-(byol|payg)$", var.image_family))
-    error_message = "The image_family is always in form 'fortigate-[major version]-[payg or byol]' (eg. 'fortigate-72-byol')."
+    condition     = var.image_family == ""
+    error_message = "var.image_family is deprecated in this module version. Please use var.image.family instead"
   }
 }
 
@@ -157,5 +157,32 @@ variable "probe_loopback_ip" {
   validation {
     condition     = anytrue([can(regex("$((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}^", var.probe_loopback_ip)), var.probe_loopback_ip == ""])
     error_message = "Must be a proper IPv4 IP address or empty"
+  }
+}
+
+variable "image" {
+  type = object({
+    project = optional(string, "fortigcp-project-001")
+    name    = optional(string, "")
+    family  = optional(string, "")
+    version = optional(string, "")
+    arch    = optional(string, "x64")
+    license = optional(string, "payg")
+  })
+  description = "Indicate FortiOS image you want to deploy by specifying one of the following: image family name (as image.family); firmware version, architecture and licensing (as image.version, image.arch and image.lic); image name (as image.name) optionally with image project name for custom images (as image.project)."
+  default = {
+    family = "fortigate-74-payg"
+  }
+  validation {
+    condition     = contains(["arm", "x64"], var.image.arch)
+    error_message = "image.arch must be either 'arm' or 'x64' (default: 'x64')"
+  }
+  validation {
+    condition     = contains(["payg", "byol"], var.image.license)
+    error_message = "image.license can be either 'payg' or 'byol' (default: 'payg'). For FortiFlex use 'byol'"
+  }
+  validation {
+    condition     = anytrue([length(split(".", var.image.version)) == 3, length(split(".", var.image.version)) == 2, var.image.version == ""])
+    error_message = "image.version can be either null or contain FortiOS version in 3-digit format (eg. \"7.4.1\") or major version in 2-digit format (eg. \"7.4\")"
   }
 }

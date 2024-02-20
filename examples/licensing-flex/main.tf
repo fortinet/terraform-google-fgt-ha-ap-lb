@@ -5,5 +5,7 @@ module "fgt_ha" {
   subnets       = [ "external", "internal", "hasync", "mgmt" ]
 
   flex_tokens   = ["B1C38EDAEA0D4E568D2F", "9E8FF67B64924C3B82E1"]
-  image_family  = "fortigate-70-byol"
+  image = {
+    family  = "fortigate-70-byol"
+  }
 }

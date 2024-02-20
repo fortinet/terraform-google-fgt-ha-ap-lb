@@ -4,7 +4,9 @@ module "fgt_ha" {
   prefix        = "fgt-example-byol"
   region        = "us-central1"
   license_files = ["dummy_lic1.lic", "dummy_lic2.lic"]
-  image_family  = "fortigate-70-byol"
+  image = {
+    family  = "fortigate-72-byol"
+  }
   labels        = {
     owner : "johndoe"
     env   : "test"
