@@ -129,7 +129,7 @@ module "fgtimage" {
   ver    = var.image.version
   arch   = var.image.arch
   lic    = "${try(var.license_files[0], "")}${try(var.flex_tokens[0], "")}" != "" ? "byol" : var.image.license
-  family = var.image.version=="" ? var.image.family : ""
+  family = var.image.version == "" ? var.image.family : ""
 }
 
 #

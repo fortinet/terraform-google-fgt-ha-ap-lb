@@ -30,6 +30,6 @@ output "ilb_address" {
 }
 
 output "frontends" {
-  value = local.eip_all
+  value       = local.eip_all
   description = "Map of all external IP addresses bound to FortiGate cluster"
 }
