@@ -123,7 +123,7 @@ data "cloudinit_config" "fgt" {
 # Find marketplace image either based on version+arch+lic/family ...
 #
 module "fgtimage" {
-  count = var.image.project == "fortigcp-project-001" ? 1 : 0
+  count = var.image.name == "" ? 1 : 0
 
   source = "./modules/fgt-get-image"
   ver    = var.image.version
@@ -136,7 +136,7 @@ module "fgtimage" {
 # ... or get the custom one
 #
 data "google_compute_image" "custom" {
-  count = var.image.project == "fortigcp-project-001" ? 0 : 1
+  count = var.image.name != "" ? 1 : 0
 
   project = var.image.project
   name    = var.image.name
@@ -158,7 +158,7 @@ resource "google_compute_instance" "fgt_vm" {
 
   boot_disk {
     initialize_params {
-      image  = var.image.project == "fortigcp-project-001" ? module.fgtimage[0].self_link : data.google_compute_image.custom[0].self_link
+      image  = var.image.name == "" ? module.fgtimage[0].self_link : data.google_compute_image.custom[0].self_link
       labels = var.labels
     }
   }

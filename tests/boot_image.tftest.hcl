@@ -41,7 +41,7 @@ run "img_select_by_family_byol" {
   }
 }
 
-run "img_select_by_version_default" {
+run "img_select_by_version_defaultpayg" {
   command = plan
 
   variables {
@@ -141,6 +141,26 @@ run "img_select_by_version_short_byol" {
   assert {
     condition     = !strcontains(google_compute_instance.fgt_vm[0].boot_disk[0].initialize_params[0].image, "ondemand")
     error_message = "Image should be BYOL"
+  }
+}
+
+run "img_select_by_name" {
+  command = plan
+
+  variables {
+    subnets = run.setup_net.subnets
+    image = {
+      name = "fortinet-fgt-724-20230310-001-w-license"
+    }
+  }
+
+  assert {
+    condition = strcontains(google_compute_instance.fgt_vm[0].boot_disk[0].initialize_params[0].image, "fortinet-fgt-724-20230310-001-w-license")
+    error_message = "Boot image selected by name does not match the name in variable (fortinet-fgt-724-20230310-001-w-license)"
+  }
+  assert {
+    condition = strcontains(google_compute_instance.fgt_vm[0].boot_disk[0].initialize_params[0].image, "fortigcp-project-001")
+    error_message = "Named image should default to Fortinet public project"
   }
 }
 
