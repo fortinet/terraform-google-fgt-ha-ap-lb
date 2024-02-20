@@ -98,14 +98,22 @@ variable "image_family" {
 
 variable "image_name" {
   type        = string
-  description = "Image name. If not empty overrides var.firmware_family"
+  description = "(deprecated) image_name and image_family is deprecated. Please use image.name instead"
   default     = ""
+  validation {
+    condition     = var.image_name == ""
+    error_message = "var.image_name is deprecated in this module version. Please use var.image.name instead"
+  }
 }
 
 variable "image_project" {
   type        = string
-  description = "Project hosting the image. Defaults to Fortinet public project"
-  default     = "fortigcp-project-001"
+  description = "(deprecated) Project hosting the image. Defaults to Fortinet public project"
+  default     = ""
+  validation {
+    condition     = var.image_project == ""
+    error_message = "var.image_project is deprecated in this module version. Please use var.image.project instead"
+  }
 }
 
 variable "api_accprofile" {
