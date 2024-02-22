@@ -183,7 +183,7 @@ variable "image" {
   })
   description = "Indicate FortiOS image you want to deploy by specifying one of the following: image family name (as image.family); firmware version, architecture and licensing (as image.version, image.arch and image.lic); image name (as image.name) optionally with image project name for custom images (as image.project)."
   default = {
-    family = "fortigate-74-payg"
+    version = "7.2.7" # mature
   }
   validation {
     condition     = contains(["arm", "x64"], var.image.arch)
