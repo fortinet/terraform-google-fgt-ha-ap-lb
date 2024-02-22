@@ -106,7 +106,7 @@ run "img_custom" {
   }
 }
 
-run "img_default" {
+run "img_null" {
   command = plan
 
   variables {
@@ -120,6 +120,24 @@ run "img_default" {
   assert {
     condition = strcontains(google_compute_instance.fgt_vm[0].boot_disk[0].initialize_params[0].image, "fortinet-fgtondemand")
     error_message = "Default image should be PAYG and contain 'fortinet-fgtondemand'"
+  }
+}
+
+run "img_null_with_tokens" {
+  command = plan
+
+  variables {
+    subnets = run.setup_net.subnets
+    flex_tokens = ["aaa","bbb"]
+  }
+
+  assert {
+    condition = strcontains(google_compute_instance.fgt_vm[0].boot_disk[0].initialize_params[0].image, "fortigcp-project-001")
+    error_message = "Default image should refer to Fortinet public project"
+  }
+  assert {
+    condition = !strcontains(google_compute_instance.fgt_vm[0].boot_disk[0].initialize_params[0].image, "fortinet-fgtondemand")
+    error_message = "Adding flex tokens to default image config did not switch to BYOL"
   }
 }
 
