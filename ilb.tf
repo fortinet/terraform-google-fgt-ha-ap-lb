@@ -25,7 +25,7 @@ resource "google_compute_region_backend_service" "ilb_bes" {
   }
 }
 
-resource "google_compute_forwarding_rule" "ilb_fwd_rule" {
+resource "google_compute_forwarding_rule" "ilb" {
   for_each = local.ports_internal
 
   name                  = "${local.prefix}fwdrule-${each.key}-ilb-${local.region_short}"
@@ -51,6 +51,6 @@ resource "google_compute_route" "outbound_routes" {
   name         = "${local.prefix}rt-${data.google_compute_subnetwork.connected[split("|", each.key)[0]].name}-${split("|", each.key)[1]}-via-fgt"
   dest_range   = var.routes[split("|", each.key)[1]]
   network      = data.google_compute_subnetwork.connected[split("|", each.key)[0]].network
-  next_hop_ilb = google_compute_forwarding_rule.ilb_fwd_rule[split("|", each.key)[0]].self_link
+  next_hop_ilb = google_compute_forwarding_rule.ilb[split("|", each.key)[0]].self_link
   priority     = 100
 }

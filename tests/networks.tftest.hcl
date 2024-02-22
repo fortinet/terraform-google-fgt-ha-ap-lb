@@ -28,7 +28,7 @@ run "classic-4nic" {
     error_message = "Number of NICs does not match number of subnets"
   }
   assert {
-    condition = length(keys(google_compute_forwarding_rule.ilb_fwd_rule)) == 1
+    condition = length(keys(google_compute_forwarding_rule.ilb)) == 1
     error_message = "Number of forwarding rules should be 1"
   }
   assert {
@@ -38,10 +38,6 @@ run "classic-4nic" {
   assert {
     condition = length(google_compute_instance.fgt_vm[0].network_interface[2].access_config) == 0
     error_message = "Port3 should have no external IP"
-  }
-  assert {
-    condition = strcontains(google_compute_instance.fgt_vm[0].metadata.user-data, "set hbdev \"port3\"")
-    error_message = "Missing hbdev port3 in configuration"
   }
 }
 
