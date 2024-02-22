@@ -19,9 +19,11 @@ terraform {
 
 # Pull information about subnets we will connect to FortiGate instances. Subnets must
 # already exist (can be created in parent module).
-data "google_compute_subnetwork" "subnets" {
-  count  = length(var.subnets)
-  name   = var.subnets[count.index]
+# Index by port name
+data "google_compute_subnetwork" "connected" {
+  for_each = toset([for indx in range(length(var.subnets)) : "port${indx + 1}"])
+
+  name   = var.subnets[tonumber(substr(each.key, 4, 1)) - 1]
   region = var.region
 }
 
@@ -43,16 +45,31 @@ locals {
 # We'll use shortened region and zone names for some resource names. This is a standard shortening described in
 # GCP security foundations.
 locals {
-  region_short = replace(replace(replace(replace(var.region, "europe-", "eu"), "australia", "au"), "northamerica", "na"), "southamerica", "sa")
+  region_short = replace(replace(replace(replace(replace(replace(replace(replace(replace(var.region, "-south", "s"), "-east", "e"), "-central", "c"), "-north", "n"), "-west", "w"), "europe", "eu"), "australia", "au"), "northamerica", "na"), "southamerica", "sa")
   zones_short = [
-    replace(replace(replace(replace(local.zones[0], "europe-", "eu"), "australia", "au"), "northamerica", "na"), "southamerica", "sa"),
-    replace(replace(replace(replace(local.zones[1], "europe-", "eu"), "australia", "au"), "northamerica", "na"), "southamerica", "sa")
+    "${local.region_short}${substr(local.zones[0], length(var.region) + 1, 1)}",
+    "${local.region_short}${substr(local.zones[1], length(var.region) + 1, 1)}"
   ]
 }
 
 locals {
   # If prefix is defined, add a "-" spacer after it
   prefix = length(var.prefix) > 0 && substr(var.prefix, -1, 1) != "-" ? "${var.prefix}-" : var.prefix
+
+  # Auto-set NIC type to GVNIC if ARM image was selected
+  nic_type = var.image.arch == "arm" ? "GVNIC" : var.nic_type
+
+  # List of NICs with public IP attached
+  public_nics = ["port${length(var.subnets)}"]
+
+  # FGCP HA sync port (last)
+  ha_port = var.ha_port != null ? var.ha_port : "port${length(var.subnets)}"
+
+  # FGCP dedicated management port (last)
+  mgmt_port = var.mgmt_port != null ? var.mgmt_port : "port${length(var.subnets)}"
+
+  subnets_internal = { for indx, subnet in var.subnets : indx => subnet if(indx > 0 && local.ha_port != "port${indx + 1}" && local.mgmt_port != "port${indx + 1}") }
+  ports_internal   = { for indx, subnet in var.subnets : "port${indx + 1}" => subnet if(indx > 0 && local.ha_port != "port${indx + 1}" && local.mgmt_port != "port${indx + 1}") }
 }
 
 # Create new random API key to be provisioned in FortiGates.
@@ -96,25 +113,30 @@ data "cloudinit_config" "fgt" {
     content_type = "text/plain; charset=\"us-ascii\""
     content = templatefile("${path.module}/fgt-base-config.tftpl", {
       hostname             = "${local.prefix}vm-fgt${count.index + 1}-${local.zones_short[count.index]}"
-      unicast_peer_ip      = google_compute_address.hasync_priv[(count.index + 1) % 2].address #
-      unicast_peer_netmask = cidrnetmask(data.google_compute_subnetwork.subnets[2].ip_cidr_range)
-      ha_prio              = (count.index + 1) % 2 #
       healthcheck_port     = var.healthcheck_port
-      api_key              = random_string.api_key.result
-      ext_ip               = google_compute_address.ext_priv[count.index].address
-      ext_gw               = data.google_compute_subnetwork.subnets[0].gateway_address
-      int_ip               = google_compute_address.int_priv[count.index].address
-      int_gw               = data.google_compute_subnetwork.subnets[1].gateway_address
-      int_cidr             = data.google_compute_subnetwork.subnets[1].ip_cidr_range
-      hasync_ip            = google_compute_address.hasync_priv[count.index].address
-      mgmt_ip              = google_compute_address.mgmt_priv[count.index].address
-      mgmt_gw              = data.google_compute_subnetwork.subnets[3].gateway_address
-      ilb_ip               = google_compute_address.ilb.address
       api_acl              = var.api_acl
       api_accprofile       = var.api_accprofile
-      frontend_eips        = local.eip_all
-      fgt_config           = var.fgt_config
-      probe_loopback_ip    = var.probe_loopback_ip
+      api_key              = random_string.api_key.result
+      hbdev_port           = local.ha_port
+      mgmt_port            = local.mgmt_port
+      mgmt_gw              = data.google_compute_subnetwork.connected[local.mgmt_port].gateway_address
+      ha_prio              = (count.index + 1) % 2
+      unicast_peer_ip      = google_compute_address.priv["${local.ha_port}-${(count.index + 1) % 2}"].address
+      unicast_peer_netmask = cidrnetmask(data.google_compute_subnetwork.connected[local.ha_port].ip_cidr_range)
+      priv_ips             = { for indx, addr in google_compute_address.priv : split("-", indx)[0] => addr.address if tonumber(split("-", indx)[1]) == count.index }
+      ilb_ips              = google_compute_address.ilb
+      # note: don't index subnets var by port name as we might include all subnets from connected VPCs in future
+      subnets = { for port, subnet in data.google_compute_subnetwork.connected :
+        subnet.ip_cidr_range => {
+          "gw" : subnet.gateway_address,
+          "dev" : port,
+          "name" : subnet.name
+        }
+      }
+      default_gw        = data.google_compute_subnetwork.connected["port1"].gateway_address
+      frontend_eips     = local.eip_all
+      fgt_config        = var.fgt_config
+      probe_loopback_ip = var.probe_loopback_ip
     })
   }
 }
@@ -150,7 +172,7 @@ resource "google_compute_instance" "fgt_vm" {
   count = 2
 
   zone           = local.zones[count.index]
-  name           = "${local.prefix}vm${count.index + 1}-${local.zones_short[count.index]}"
+  name           = "${local.prefix}vm-fgt${count.index + 1}-${local.zones_short[count.index]}"
   machine_type   = var.machine_type
   can_ip_forward = true
   tags           = ["fgt"]
@@ -177,27 +199,19 @@ resource "google_compute_instance" "fgt_vm" {
     serial-port-enable = true
   }
 
-  network_interface {
-    subnetwork = data.google_compute_subnetwork.subnets[0].id
-    network_ip = google_compute_address.ext_priv[count.index].address
-    nic_type   = var.nic_type
-  }
-  network_interface {
-    subnetwork = data.google_compute_subnetwork.subnets[1].id
-    network_ip = google_compute_address.int_priv[count.index].address
-    nic_type   = var.nic_type
-  }
-  network_interface {
-    subnetwork = data.google_compute_subnetwork.subnets[2].id
-    network_ip = google_compute_address.hasync_priv[count.index].address
-    nic_type   = var.nic_type
-  }
-  network_interface {
-    subnetwork = data.google_compute_subnetwork.subnets[3].id
-    network_ip = google_compute_address.mgmt_priv[count.index].address
-    nic_type   = var.nic_type
-    access_config {
-      nat_ip = google_compute_address.mgmt_pub[count.index].address
+  dynamic "network_interface" {
+    for_each = [for indx in range(length(var.subnets)) : "port${indx + 1}"]
+
+    content {
+      subnetwork = data.google_compute_subnetwork.connected[network_interface.value].name
+      nic_type   = local.nic_type
+      network_ip = google_compute_address.priv["${network_interface.value}-${count.index}"].address
+      dynamic "access_config" {
+        for_each = contains(local.public_nics, network_interface.value) ? [1] : []
+        content {
+          nat_ip = google_compute_address.pub["${network_interface.value}-${count.index}"].address
+        }
+      }
     }
   }
 
@@ -231,9 +245,23 @@ resource "google_compute_instance_group" "fgt_umigs" {
 }
 
 # Firewall rules
+#
+## Open all traffic on data networks
+
+resource "google_compute_firewall" "allow_all" {
+  for_each = { for port, network in data.google_compute_subnetwork.connected : port => network if port != local.ha_port && port != local.mgmt_port }
+
+  name          = "${local.prefix}fw-${each.value.name}-allowall"
+  network       = each.value.network
+  source_ranges = ["0.0.0.0/0"]
+  allow {
+    protocol = "all"
+  }
+}
+
 resource "google_compute_firewall" "allow_mgmt" {
   name          = "${local.prefix}fw-mgmt-allow-admin"
-  network       = data.google_compute_subnetwork.subnets[3].network
+  network       = data.google_compute_subnetwork.connected[local.mgmt_port].network
   source_ranges = var.admin_acl
   target_tags   = ["fgt"]
 
@@ -244,7 +272,7 @@ resource "google_compute_firewall" "allow_mgmt" {
 
 resource "google_compute_firewall" "allow_hasync" {
   name        = "${local.prefix}fw-hasync-allow-fgt"
-  network     = data.google_compute_subnetwork.subnets[2].network
+  network     = data.google_compute_subnetwork.connected[local.ha_port].network
   source_tags = ["fgt"]
   target_tags = ["fgt"]
 
@@ -253,25 +281,6 @@ resource "google_compute_firewall" "allow_hasync" {
   }
 }
 
-resource "google_compute_firewall" "allow_port1" {
-  name          = "${local.prefix}fw-ext-allowall"
-  network       = data.google_compute_subnetwork.subnets[0].network
-  source_ranges = ["0.0.0.0/0"]
-
-  allow {
-    protocol = "all"
-  }
-}
-
-resource "google_compute_firewall" "allow_port2" {
-  name          = "${local.prefix}fw-int-allowall"
-  network       = data.google_compute_subnetwork.subnets[1].network
-  source_ranges = ["0.0.0.0/0"]
-
-  allow {
-    protocol = "all"
-  }
-}
 
 # Save api_key to Secret Manager if var.api_token_secret_name is set
 resource "google_secret_manager_secret" "api_secret" {

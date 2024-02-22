@@ -8,7 +8,7 @@
 resource "google_compute_router" "nat_router" {
   name    = "${local.prefix}cr-cloudnat-${local.region_short}"
   region  = var.region
-  network = data.google_compute_subnetwork.subnets[0].network
+  network = data.google_compute_subnetwork.connected["port1"].network
 }
 
 resource "google_compute_router_nat" "cloud_nat" {
@@ -18,7 +18,7 @@ resource "google_compute_router_nat" "cloud_nat" {
   nat_ip_allocate_option             = "AUTO_ONLY"
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
   subnetwork {
-    name                    = data.google_compute_subnetwork.subnets[0].self_link
+    name                    = data.google_compute_subnetwork.connected["port1"].self_link
     source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
   }
 }

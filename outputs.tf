@@ -1,5 +1,5 @@
 output "fgt_mgmt_eips" {
-  value       = google_compute_address.mgmt_pub[*].address
+  value       = google_compute_address.pub
   description = "Public management IP addresses of FortiGate VMs"
 }
 
@@ -25,7 +25,7 @@ output "api_key" {
 
 
 output "ilb_address" {
-  value       = google_compute_address.ilb.address
+  value       = { for indx, ilb in google_compute_address.ilb : indx => ilb.address }
   description = "Address of ILB. Can be used for PBR creation"
 }
 

@@ -17,10 +17,14 @@ variable "zones" {
 
 variable "subnets" {
   type        = list(string)
-  description = "Names of four existing subnets to be connected to FortiGate VMs (external, internal, heartbeat, management)"
+  description = "Names of four existing subnets to be connected to FortiGate VMs"
   validation {
-    condition     = length(var.subnets) == 4
-    error_message = "Please provide exactly 4 subnet names (external, internal, heartbeat, management)."
+    condition     = length(var.subnets) >= 2
+    error_message = "Minimum 2 NICs required \n(provide at least 2 subnet names. First one will be used as external, the last one for HA and dedicated management)"
+  }
+  validation {
+    condition     = length(var.subnets) <= 8
+    error_message = "Too many NICs \n(Google Compute does not support more than 8 NICs per VM. Use one of hub-and-spoke architectures to connect more VPCs)"
   }
 }
 
@@ -193,4 +197,18 @@ variable "image" {
     condition     = anytrue([length(split(".", var.image.version)) == 3, length(split(".", var.image.version)) == 2, var.image.version == ""])
     error_message = "image.version can be either null or contain FortiOS version in 3-digit format (eg. \"7.4.1\") or major version in 2-digit format (eg. \"7.4\")"
   }
+}
+
+variable "ha_port" {
+  type        = string
+  nullable    = true
+  default     = null
+  description = "Enforce a custom HA port instead of the last one. Provide value as FortiGate port name (eg. \"port3\")"
+}
+
+variable "mgmt_port" {
+  type        = string
+  nullable    = true
+  default     = null
+  description = "Enforce a custom management port instead of the last one. Provide value as FortiGate port name (eg. \"port3\")"
 }
