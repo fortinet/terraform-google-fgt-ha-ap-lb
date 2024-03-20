@@ -20,11 +20,11 @@ variable "subnets" {
   description = "Names of four existing subnets to be connected to FortiGate VMs"
   validation {
     condition     = length(var.subnets) >= 2
-    error_message = "Minimum 2 NICs required \n(provide at least 2 subnet names. First one will be used as external, the last one for HA and dedicated management)"
+    error_message = "Minimum 2 NICs required \n(provide at least 2 subnet names; first one will be used as external, the last one for HA and dedicated management)."
   }
   validation {
     condition     = length(var.subnets) <= 8
-    error_message = "Too many NICs \n(Google Compute does not support more than 8 NICs per VM. Use one of hub-and-spoke architectures to connect more VPCs)"
+    error_message = "Too many NICs \n(Google Compute does not support more than 8 NICs per VM. Use one of hub-and-spoke architectures to connect more VPCs)."
   }
 }
 
@@ -96,7 +96,7 @@ variable "image_family" {
   default     = ""
   validation {
     condition     = var.image_family == ""
-    error_message = "var.image_family is deprecated in this module version. Please use var.image.family instead"
+    error_message = "Variable image_family is deprecated in this module version. Please use var.image.family instead."
   }
 }
 
@@ -106,7 +106,7 @@ variable "image_name" {
   default     = ""
   validation {
     condition     = var.image_name == ""
-    error_message = "var.image_name is deprecated in this module version. Please use var.image.name instead"
+    error_message = "Variable image_name is deprecated in this module version. Please use var.image.name instead."
   }
 }
 
@@ -116,7 +116,7 @@ variable "image_project" {
   default     = ""
   validation {
     condition     = var.image_project == ""
-    error_message = "var.image_project is deprecated in this module version. Please use var.image.project instead"
+    error_message = "Variable image_project is deprecated in this module version. Please use var.image.project instead."
   }
 }
 
@@ -168,7 +168,7 @@ variable "probe_loopback_ip" {
   default     = ""
   validation {
     condition     = anytrue([can(regex("$((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}^", var.probe_loopback_ip)), var.probe_loopback_ip == ""])
-    error_message = "Must be a proper IPv4 IP address or empty"
+    error_message = "Must be a proper IPv4 IP address or empty."
   }
 }
 
@@ -187,15 +187,15 @@ variable "image" {
   }
   validation {
     condition     = contains(["arm", "x64"], var.image.arch)
-    error_message = "image.arch must be either 'arm' or 'x64' (default: 'x64')"
+    error_message = "Value of image.arch must be either 'arm' or 'x64' (default: 'x64')."
   }
   validation {
     condition     = contains(["payg", "byol"], var.image.license)
-    error_message = "image.license can be either 'payg' or 'byol' (default: 'payg'). For FortiFlex use 'byol'"
+    error_message = "Value of image.license can be either 'payg' or 'byol' (default: 'payg'). For FortiFlex use 'byol'."
   }
   validation {
     condition     = anytrue([length(split(".", var.image.version)) == 3, length(split(".", var.image.version)) == 2, var.image.version == ""])
-    error_message = "image.version can be either null or contain FortiOS version in 3-digit format (eg. \"7.4.1\") or major version in 2-digit format (eg. \"7.4\")"
+    error_message = "Value of image.version can be either null or contain FortiOS version in 3-digit format (eg. \"7.4.1\") or major version in 2-digit format (eg. \"7.4\")."
   }
 }
 
