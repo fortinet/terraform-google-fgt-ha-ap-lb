@@ -58,7 +58,7 @@ run "dual-internal" {
     error_message = "Number of NICs does not match number of subnets"
   }
   assert {
-    condition = length(keys(google_compute_forwarding_rule.ilb_fwd_rule)) == 2
+    condition = length(keys(google_compute_forwarding_rule.ilb)) == 2
     error_message = "Number of forwarding rules should be 2 (for 2 internal subnets)"
   }
   assert {
