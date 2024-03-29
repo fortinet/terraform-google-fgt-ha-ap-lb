@@ -112,8 +112,20 @@ config route static
   edit 0
     set device port1
     set comment "default"
-    set gateway ${default_gw}
+    set gateway ${gateways["port1"]}
   next
+%{ for port,addr in ilb_ips ~}
+  edit 0
+    set device ${port}
+    set gateway ${gateways[port]}
+    set dst 35.191.0.0/16
+  next
+  edit 0
+    set device ${port}
+    set gateway ${gateways[port]}
+    set dst 130.211.0.0/22
+  next
+%{ endfor ~}
 end
 
 config firewall ippool

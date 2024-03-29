@@ -133,7 +133,7 @@ data "cloudinit_config" "fgt" {
           "name" : subnet.name
         }
       }
-      default_gw        = data.google_compute_subnetwork.connected["port1"].gateway_address
+      gateways = { for port, subnet in data.google_compute_subnetwork.connected : port=>subnet.gateway_address }
       frontend_eips     = local.eip_all
       fgt_config        = var.fgt_config
       probe_loopback_ip = var.probe_loopback_ip
