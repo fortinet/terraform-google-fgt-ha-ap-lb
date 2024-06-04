@@ -17,7 +17,7 @@ resource "google_compute_address" "priv" {
   ) : join("-", pair)])
 
   name         = "${local.prefix}addrprv-${each.value}"
-  region       = var.region
+  region       = local.region
   address_type = "INTERNAL"
   subnetwork   = data.google_compute_subnetwork.connected[split("-", each.key)[0]].id
 }
@@ -32,7 +32,7 @@ resource "google_compute_address" "pub" {
   ) : join("-", pair)])
 
   name   = split("-", each.value)[0] == local.mgmt_port ? "${local.prefix}addr-mgmt-fgt${split("-", each.value)[1] + 1}" : "${local.prefix}addrpub-${each.value}"
-  region = var.region
+  region = local.region
 }
 
 #
@@ -42,7 +42,7 @@ resource "google_compute_address" "ilb" {
   for_each = local.ports_internal
 
   name         = "${local.prefix}addr-${each.value}-ilb"
-  region       = var.region
+  region       = local.region
   address_type = "INTERNAL"
   subnetwork   = data.google_compute_subnetwork.connected[each.key].id
 }

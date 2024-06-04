@@ -9,7 +9,7 @@ resource "google_compute_region_backend_service" "ilb_bes" {
   for_each = local.ports_internal
 
   name    = "${local.prefix}bes-${each.key}-ilb-${local.region_short}"
-  region  = var.region
+  region  = local.region
   network = data.google_compute_subnetwork.connected[each.key].network
 
   backend {
@@ -29,7 +29,7 @@ resource "google_compute_forwarding_rule" "ilb" {
   for_each = local.ports_internal
 
   name                  = "${local.prefix}fwdrule-${each.key}-ilb-${local.region_short}"
-  region                = var.region
+  region                = local.region
   network               = data.google_compute_subnetwork.connected[each.key].network
   subnetwork            = data.google_compute_subnetwork.connected[each.key].id
   ip_address            = google_compute_address.ilb[each.key].address

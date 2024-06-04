@@ -26,7 +26,7 @@ locals {
 data "google_compute_addresses" "existing" {
   for_each = toset(local.in_eip_existing)
 
-  region = var.region
+  region = local.region
   filter = "address=\"${each.value}\""
 
   # NOTE: in contrary to documentation lifecycle is not supported for data.
@@ -34,7 +34,7 @@ data "google_compute_addresses" "existing" {
   #  lifecycle {
   #    postcondition {
   #      condition = length( self.addresses )>0
-  #      error_message = "Address ${each.value} was not found in region ${var.region}."
+  #      error_message = "Address ${each.value} was not found in region ${local.region}."
   #    }
   #  }
 }
@@ -43,7 +43,7 @@ resource "google_compute_address" "new_eip" {
   for_each = toset(local.in_eip_new)
 
   name         = "${local.prefix}eip-${each.value}"
-  region       = var.region
+  region       = local.region
   address_type = "EXTERNAL"
 }
 
@@ -51,7 +51,7 @@ resource "google_compute_forwarding_rule" "frontends" {
   for_each = local.eip_all
 
   name                  = "${local.prefix}fr-${each.key}"
-  region                = var.region
+  region                = local.region
   ip_address            = each.value
   ip_protocol           = "L3_DEFAULT"
   all_ports             = true
@@ -63,7 +63,7 @@ resource "google_compute_forwarding_rule" "frontends" {
 resource "google_compute_region_backend_service" "elb_bes" {
   provider              = google-beta
   name                  = "${local.prefix}bes-elb-${local.region_short}"
-  region                = var.region
+  region                = local.region
   load_balancing_scheme = "EXTERNAL"
   protocol              = "UNSPECIFIED"
 

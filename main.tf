@@ -24,18 +24,23 @@ data "google_compute_subnetwork" "connected" {
   for_each = toset([for indx in range(length(var.subnets)) : "port${indx + 1}"])
 
   name   = var.subnets[tonumber(substr(each.key, 4, 1)) - 1]
-  region = var.region
+  region = local.region
 }
 
 # Pull default zones and the service account. Both can be overridden in variables if needed.
 data "google_compute_zones" "zones_in_region" {
-  region = var.region
+  region = local.region
 }
 
 data "google_compute_default_service_account" "default" {
 }
 
+data "google_client_config" "default" {}
+
 locals {
+  # derive region from zones if provided, otherwise use the region from variable, as last resort use default region from provider
+  region          = coalesce(try(join("-", slice(split("-", var.zones[0]), 0, 2)), null), var.region, data.google_client_config.default.region)
+
   zones = [
     var.zones[0] != "" ? var.zones[0] : data.google_compute_zones.zones_in_region.names[0],
     var.zones[1] != "" ? var.zones[1] : data.google_compute_zones.zones_in_region.names[1]
@@ -45,10 +50,10 @@ locals {
 # We'll use shortened region and zone names for some resource names. This is a standard shortening described in
 # GCP security foundations.
 locals {
-  region_short = replace(replace(replace(replace(replace(replace(replace(replace(replace(var.region, "-south", "s"), "-east", "e"), "-central", "c"), "-north", "n"), "-west", "w"), "europe", "eu"), "australia", "au"), "northamerica", "na"), "southamerica", "sa")
+  region_short = replace(replace(replace(replace(replace(replace(replace(replace(replace(local.region, "-south", "s"), "-east", "e"), "-central", "c"), "-north", "n"), "-west", "w"), "europe", "eu"), "australia", "au"), "northamerica", "na"), "southamerica", "sa")
   zones_short = [
-    "${local.region_short}${substr(local.zones[0], length(var.region) + 1, 1)}",
-    "${local.region_short}${substr(local.zones[1], length(var.region) + 1, 1)}"
+    "${local.region_short}${substr(local.zones[0], length(local.region) + 1, 1)}",
+    "${local.region_short}${substr(local.zones[1], length(local.region) + 1, 1)}"
   ]
 }
 
@@ -228,7 +233,7 @@ resource "google_compute_instance" "fgt_vm" {
 # Common Load Balancer resources
 resource "google_compute_region_health_check" "health_check" {
   name               = "${local.prefix}healthcheck-http${var.healthcheck_port}-${local.region_short}"
-  region             = var.region
+  region             = local.region
   timeout_sec        = 2
   check_interval_sec = 2
 
