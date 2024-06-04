@@ -24,7 +24,7 @@ output "api_key" {
 }
 
 
-output "ilb_address" {
+output "ilb_addresses" {
   value       = { for indx, ilb in google_compute_address.ilb : indx => ilb.address }
   description = "Address of ILB. Can be used for PBR creation"
 }
