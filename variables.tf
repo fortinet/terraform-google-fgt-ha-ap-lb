@@ -212,3 +212,15 @@ variable "mgmt_port" {
   default     = null
   description = "Enforce a custom management port instead of the last one. Provide value as FortiGate port name (eg. \"port3\")"
 }
+
+variable "oslogin_enable" {
+  type        = bool
+  default     = false
+  description = "Set to true to enable the OSLogin for FortiGate VM instances."
+}
+
+variable "serial_port_enable" {
+  type        = bool
+  default     = false
+  description = "Set to true to enable access through serial console"
+}

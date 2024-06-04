@@ -133,7 +133,7 @@ data "cloudinit_config" "fgt" {
           "name" : subnet.name
         }
       }
-      gateways = { for port, subnet in data.google_compute_subnetwork.connected : port=>subnet.gateway_address }
+      gateways          = { for port, subnet in data.google_compute_subnetwork.connected : port => subnet.gateway_address }
       frontend_eips     = local.eip_all
       fgt_config        = var.fgt_config
       probe_loopback_ip = var.probe_loopback_ip
@@ -196,7 +196,8 @@ resource "google_compute_instance" "fgt_vm" {
   metadata = {
     user-data          = data.cloudinit_config.fgt[count.index].rendered #(count.index == 0 ? local.config_active : local.config_passive )
     license            = try(fileexists(var.license_files[count.index]), false) ? file(var.license_files[count.index]) : null
-    serial-port-enable = true
+    serial-port-enable = var.serial_port_enable
+    oslogin-enable     = var.oslogin_enable
   }
 
   dynamic "network_interface" {
