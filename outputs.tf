@@ -13,6 +13,11 @@ output "fgt_self_links" {
   description = "List of 2 self-links to FortiGate VMs"
 }
 
+output "fgt_umigs" {
+  value       = google_compute_instance_group.fgt_umigs[*].self_link
+  description = "List of 2 self-links to unmanaged instance groups with FortiGates"
+}
+
 output "elb_bes" {
   value       = google_compute_region_backend_service.elb_bes.self_link
   description = "Self-link to ELB backend service. "
