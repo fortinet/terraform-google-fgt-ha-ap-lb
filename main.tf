@@ -248,6 +248,14 @@ resource "google_compute_instance_group" "fgt_umigs" {
   name      = "${local.prefix}umig${count.index}-${local.zones_short[count.index]}"
   zone      = google_compute_instance.fgt_vm[count.index].zone
   instances = [google_compute_instance.fgt_vm[count.index].self_link]
+  named_port {
+    name = "http"
+    port = 80
+  }
+  named_port {
+    name = "https"
+    port = 443
+  }
 }
 
 # Firewall rules
