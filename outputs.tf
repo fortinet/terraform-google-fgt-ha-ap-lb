@@ -1,5 +1,5 @@
 output "fgt_mgmt_eips" {
-  value       = google_compute_address.pub
+  value       = [for eip in google_compute_address.pub : eip.address ]
   description = "Public management IP addresses of FortiGate VMs"
 }
 
@@ -32,6 +32,11 @@ output "api_key" {
 output "ilb_addresses" {
   value       = { for indx, ilb in google_compute_address.ilb : indx => ilb.address }
   description = "Address of ILB. Can be used for PBR creation"
+}
+
+output "ilb_ids" {
+  value       = { for indx, ilb in google_compute_forwarding_rule.ilb : indx => ilb.id }
+  description = "Address of ILB. Can be used for route creation"  
 }
 
 output "frontends" {
