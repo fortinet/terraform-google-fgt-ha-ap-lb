@@ -225,3 +225,9 @@ variable "serial_port_enable" {
   default     = false
   description = "Set to true to enable access through serial console"
 }
+
+variable "ports_external" {
+  type = list(string)
+  description = "List of ports treated as external. By default [port1]"
+  default = ["port1"]
+}

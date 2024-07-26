@@ -65,7 +65,7 @@ locals {
   nic_type = var.image.arch == "arm" ? "GVNIC" : var.nic_type
 
   # List of NICs with public IP attached
-  public_nics = ["port${length(var.subnets)}"]
+  public_nics = [local.mgmt_port]
 
   # FGCP HA sync port (last)
   ha_port = var.ha_port != null ? var.ha_port : "port${length(var.subnets)}"
@@ -74,7 +74,7 @@ locals {
   mgmt_port = var.mgmt_port != null ? var.mgmt_port : "port${length(var.subnets)}"
 
   subnets_internal = { for indx, subnet in var.subnets : indx => subnet if(indx > 0 && local.ha_port != "port${indx + 1}" && local.mgmt_port != "port${indx + 1}") }
-  ports_internal   = { for indx, subnet in var.subnets : "port${indx + 1}" => subnet if(indx > 0 && local.ha_port != "port${indx + 1}" && local.mgmt_port != "port${indx + 1}") }
+  ports_internal   = { for indx, subnet in var.subnets : "port${indx + 1}" => subnet if(!contains(var.ports_external, "port${indx + 1}") && local.ha_port != "port${indx + 1}" && local.mgmt_port != "port${indx + 1}") }
 }
 
 # Create new random API key to be provisioned in FortiGates.
