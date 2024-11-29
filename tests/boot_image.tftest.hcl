@@ -153,7 +153,7 @@ run "img_select_by_version_short_byol" {
   }
 
   assert {
-    condition     = strcontains(google_compute_instance.fgt_vm[0].boot_disk[0].initialize_params[0].image, "728")
+    condition     = strcontains(google_compute_instance.fgt_vm[0].boot_disk[0].initialize_params[0].image, "7210")
     error_message = "Image selected by firmware version should contain string '728' (assuming it's the newest one)"
   }
   assert {

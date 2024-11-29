@@ -232,7 +232,7 @@ run "public-addresses-elb-frontend" {
         error_message = "nic0 type is set to GVNIC"
     }
     assert {
-        condition = length(google_compute_forwarding_rule.ilb) == 2
-        error_message = "There are ${length(google_compute_forwarding_rule.ilb)} external forwarding rules instead of 2"
+        condition = length(google_compute_forwarding_rule.frontends) == 2
+        error_message = "There are ${length(google_compute_forwarding_rule.frontends)} external forwarding rules instead of 2"
     }
 }
