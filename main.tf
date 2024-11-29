@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.0.1"
+  required_version = ">= 1.5.0"
   required_providers {
     google = {
       source = "hashicorp/google"
@@ -67,8 +67,8 @@ locals {
   # List of NICs with public IP attached
   public_nics = [local.mgmt_port]
 
-  # FGCP HA sync port (last)
-  ha_port = var.ha_port != null ? var.ha_port : "port${length(var.subnets)}"
+  # FGCP HA sync port (last-1 or port3 if there are not more ports available than 3)
+  ha_port = var.ha_port != null ? var.ha_port : "port${max(length(var.subnets)-1, 3)}"
 
   # FGCP dedicated management port (last)
   mgmt_port = var.mgmt_port != null ? var.mgmt_port : "port${length(var.subnets)}"

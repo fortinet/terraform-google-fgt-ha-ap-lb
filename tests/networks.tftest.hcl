@@ -51,6 +51,8 @@ run "dual-internal" {
         run.setup_vpcs.subnets[2],
         run.setup_vpcs.subnets[4]
     ]
+    ha_port = "port4"
+    mgmt_port = "port4"
   }
 
   assert {
