@@ -7,7 +7,7 @@ terraform {
 }
 
 locals {
-	default_family = var.arch=="x86" ? "fortigate-74-${var.lic}" : "fortigate-arm64-74-${var.lic}"
+	default_family = var.arch=="x64" ? "fortigate-72-${var.lic}" : "fortigate-arm64-72-${var.lic}"
 	arch_post = substr(var.ver, 0, 2)=="7.2" && try(split(".", var.ver)[2] > 5, true) ? (var.arch=="arm" ? "arm64-" : "x64-" ) : ""
 	arch_pre  = substr(var.ver, 0, 2)=="7.2" && try(split(".", var.ver)[2] > 5, true) ? "" : (var.arch=="arm" ? "arm64-" : "" )
 	lic       = lower(var.lic)=="payg" ? "ondemand" : ""
