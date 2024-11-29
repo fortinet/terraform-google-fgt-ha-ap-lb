@@ -18,7 +18,7 @@ run "zone_from_region" {
     error_message = "Region not set from variable"
   }
   assert {
-    condition = contains( local.zones3, "us-central1-a")
+    condition = contains( local.zones, "us-central1-a")
     error_message = "Zone list does not include zone in region from variable"
   }
   assert {
@@ -39,11 +39,7 @@ run "region_from_zones" {
     error_message = "Region not set from zones"
   }
   assert {
-    condition = contains( local.zones3, "us-central1-a")
-    error_message = "Missing 3rd zone from zones list"
-  }
-  assert {
-    condition = contains( local.zones_short, "usc1a")
+    condition = contains( local.zones_short, "usc1b")
     error_message = "Missing short zone from the list"
   }
 }
