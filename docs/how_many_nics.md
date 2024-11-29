@@ -6,7 +6,7 @@ This article describes available options for connecting network interfaces in va
 
 VM instances in Google Cloud are limited regarding number of available network interfaces according to a simple formula:
 
-Nics = max( 2, min( Cpu, 8 ))
+NICs = max( 2, min( CPUs, 8 ))
 
 which translates to "VM instances with 2 or more vCPUs can have at most as many NICs as vCPUs, but no more than 8; VM instances with less than 2 vCPUs can have at most 2 NICs".
 
