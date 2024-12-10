@@ -13,7 +13,9 @@ module "fgt_ha" {
   region        = "us-central1"
   subnets       = [ "external", "internal", "hasync", "mgmt" ]
 
-  image_name    = google_compute_image.fgt_724_gvnic.name
-  image_project = google_compute_image.fgt_724_gvnic.project
+  image = {
+    name    = google_compute_image.fgt_724_gvnic.name
+    project = google_compute_image.fgt_724_gvnic.project
+  }
   nic_type      = "GVNIC"
 }
