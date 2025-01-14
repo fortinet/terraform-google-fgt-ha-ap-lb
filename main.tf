@@ -84,6 +84,13 @@ resource "random_string" "api_key" {
   numeric = true
 }
 
+resource "random_string" "ha_password" {
+  length  = 20
+  special = false
+  upper   = false
+  numeric = true
+}
+
 # Create FortiGate instances with secondary logdisks and configuration. Everything 2 times (active + passive)
 resource "google_compute_disk" "logdisk" {
   count = 2
@@ -142,6 +149,7 @@ data "cloudinit_config" "fgt" {
       frontend_eips     = local.eip_all
       fgt_config        = var.fgt_config
       probe_loopback_ip = var.probe_loopback_ip
+      ha_password       = random_string.ha_password.result
     })
   }
 }
