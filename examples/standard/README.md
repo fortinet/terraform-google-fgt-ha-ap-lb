@@ -1,0 +1,3 @@
+# Example: 4-NIC basic deployment of FortiGate HA active-passive
+
+This example shows how to use the module to deploy FortiGate HA cluster with 2 network interfaces for connections (external and internal) and a dedicated interfaces for HA sync and another one for management. While a 4-NIC approach matches the usual deployments, since version 7.0 it is possible to use the same interface for both HA sync and dedicated management functions. See (../3-nic-basic)[../3-nic-basic] for example.
