@@ -39,7 +39,7 @@ data "google_client_config" "default" {}
 
 locals {
   # derive region from zones if provided, otherwise use the region from variable, as last resort use default region from provider
-  region          = coalesce(try(join("-", slice(split("-", var.zones[0]), 0, 2)), null), var.region, data.google_client_config.default.region)
+  region = coalesce(try(join("-", slice(split("-", var.zones[0]), 0, 2)), null), var.region, data.google_client_config.default.region)
 
   zones = [
     var.zones[0] != "" ? var.zones[0] : data.google_compute_zones.zones_in_region.names[0],
@@ -68,7 +68,7 @@ locals {
   public_nics = [local.mgmt_port]
 
   # FGCP HA sync port (last-1 or port3 if there are not more ports available than 3)
-  ha_port = var.ha_port != null ? var.ha_port : "port${max(length(var.subnets)-1, 3)}"
+  ha_port = var.ha_port != null ? var.ha_port : "port${max(length(var.subnets) - 1, 3)}"
 
   # FGCP dedicated management port (last)
   mgmt_port = var.mgmt_port != null ? var.mgmt_port : "port${length(var.subnets)}"
@@ -271,10 +271,10 @@ resource "google_compute_instance_group" "fgt_umigs" {
 ## Open all traffic on data networks
 
 resource "google_compute_firewall" "allow_all" {
-  for_each = { for port, network in data.google_compute_subnetwork.connected : port => network if port != local.ha_port && port != local.mgmt_port }
+  for_each = toset([for indx in range(length(var.subnets)) : "port${indx + 1}" if !contains([local.ha_port, local.mgmt_port], "port${indx + 1}")])
 
-  name          = "${local.prefix}fw-${each.value.name}-allowall"
-  network       = each.value.network
+  name          = "${local.prefix}fw-${data.google_compute_subnetwork.connected[each.key].name}-allowall"
+  network       = data.google_compute_subnetwork.connected[each.key].network
   source_ranges = ["0.0.0.0/0"]
   allow {
     protocol = "all"
