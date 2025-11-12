@@ -23,7 +23,7 @@ terraform {
 data "google_compute_subnetwork" "connected" {
   for_each = toset([for indx in range(length(var.subnets)) : "port${indx + 1}"])
 
-  name   = var.subnets[tonumber(substr(each.key, 4, 1)) - 1]
+  name   = var.subnets[tonumber(trimprefix(each.key, "port")) - 1]
   region = local.region
 }
 
