@@ -2,7 +2,7 @@ variable "region" {
   type        = string
   description = "Region to deploy all resources in. Must match var.zones if defined."
   nullable    = true
-  default = null
+  default     = null
 }
 
 variable "prefix" {
@@ -25,8 +25,8 @@ variable "subnets" {
     error_message = "Minimum 2 NICs required \n(provide at least 2 subnet names; first one will be used as external, the last one for HA and dedicated management)."
   }
   validation {
-    condition     = length(var.subnets) <= 8
-    error_message = "Too many NICs \n(Google Compute does not support more than 8 NICs per VM. Use one of hub-and-spoke architectures to connect more VPCs)."
+    condition     = length(var.subnets) <= 10
+    error_message = "Too many NICs \n(Google Compute does not support more than 10 NICs per VM. Use one of hub-and-spoke architectures to connect more VPCs)."
   }
 }
 
@@ -228,7 +228,7 @@ variable "serial_port_enable" {
 }
 
 variable "ports_external" {
-  type = list(string)
+  type        = list(string)
   description = "List of ports treated as external. By default [port1]"
-  default = ["port1"]
+  default     = ["port1"]
 }
