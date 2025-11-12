@@ -1,3 +1,5 @@
+***[DEPRECATED] GVNIC is now built into the standard images and does not require copying and customizing the image.***
+
 # FortiGate module: GVNIC and custom image
 
 In some cases you might want to use custom boot image instead of the one provided by Fortinet. One of these reasons is using GVNIC driver. By default images for Intel-based architecture (amd64) deploy instances with virtio driver. If you want to change it you need to create a private image with GVNIC support (FortiGate firmware already supports it, but it's not indicated in the image metadata). The easiest way to create a custom image is to copy existing public image with new options.
