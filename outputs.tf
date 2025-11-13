@@ -43,3 +43,18 @@ output "frontends" {
   value       = local.eip_all
   description = "Map of all external IP addresses bound to FortiGate cluster"
 }
+
+output "fgts" {
+  value = [for vm in google_compute_instance.fgt_vm: {
+    name = vm.name
+    self_link = vm.self_link
+    id = vm.id
+    instance_id = vm.instance_id
+    zone = vm.zone
+    boot_disk = { initialize_params = [vm.boot_disk[0].initialize_params]}
+    network_interface = [ for nic_indx in range(length(var.subnets)) : vm.network_interface[ nic_indx ]]
+    ports = { for nic_indx in range(length(var.subnets)) : "port${nic_indx+1}"=>vm.network_interface[ nic_indx ]}
+    service_account = vm.service_account
+  }]
+  description = "FortiGate VM instance objects (partial)"
+}
