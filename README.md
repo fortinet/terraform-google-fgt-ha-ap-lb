@@ -28,7 +28,7 @@ We assume you have a working root module with proper Google provider configurati
     ```
 1. In the above module block provide the variables described in `variables.tf`. Only 2 variables are obligatory:
     - `region` or `zones` - name of the region to deploy to (zones will be selected automatically) or list of 2 zones; it also indicates subnets to use
-    - `subnets` - ordered list of 3 or more names of subnets already existing in the region to be used as external, internal, heartbeat and management networks. Heartbeat and management will use the same subnet by default if only 3 subnets are passed in this variable. Default assignment of heartbeat and management interfaces can be changed using `ha_port` and `mgmt_port` variables.
+    - `subnets` - ordered list of 3 or more names of subnets already existing in the region to be used as external, internal, heartbeat and management networks. Heartbeat and management will use the same subnet by default if only 3 subnets are passed in this variable. Default assignment of heartbeat and management interfaces can be changed using `ha_port` and `mgmt_port` variables. When deploying to shared VPC with subnets in another project use full `self_link` values instead of subnet names.
 
     but you might want to provide values also to some others:
     - `zones` - list of 2 zones for FortiGate VMs. Always match these to your production workloads to avoid [inter-zone traffic fees](https://cloud.google.com/vpc/network-pricing). You can skip for proof-of-concept deployments and let the module automatically detect zones in the region.

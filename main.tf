@@ -19,12 +19,14 @@ terraform {
 
 # Pull information about subnets we will connect to FortiGate instances. Subnets must
 # already exist (can be created in parent module).
+# Self-link is automatically detected for deployments in Shared VPCs
 # Index by port name
 data "google_compute_subnetwork" "connected" {
   for_each = toset([for indx in range(length(var.subnets)) : "port${indx + 1}"])
 
-  name   = var.subnets[tonumber(trimprefix(each.key, "port")) - 1]
-  region = local.region
+  self_link = try(regex("^.*/?projects/.+/regions/.+/subnetworks/.+$", var.subnets[tonumber(trimprefix(each.key, "port")) - 1]), null)
+  name      = var.subnets[tonumber(trimprefix(each.key, "port")) - 1]
+  region    = local.region
 }
 
 # Pull default zones and the service account. Both can be overridden in variables if needed.
@@ -73,8 +75,8 @@ locals {
   # FGCP dedicated management port (last)
   mgmt_port = var.mgmt_port != null ? var.mgmt_port : "port${length(var.subnets)}"
 
-  subnets_internal = { for indx, subnet in var.subnets : indx => subnet if(indx > 0 && local.ha_port != "port${indx + 1}" && local.mgmt_port != "port${indx + 1}") }
-  ports_internal   = { for indx, subnet in var.subnets : "port${indx + 1}" => subnet if(!contains(var.ports_external, "port${indx + 1}") && local.ha_port != "port${indx + 1}" && local.mgmt_port != "port${indx + 1}") }
+  subnets_internal = { for indx, subnet in var.subnets : indx => data.google_compute_subnetwork.connected["port${indx + 1}"].name if(indx > 0 && local.ha_port != "port${indx + 1}" && local.mgmt_port != "port${indx + 1}") }
+  ports_internal   = { for port, net in data.google_compute_subnetwork.connected : port => net.name if(!contains(var.ports_external, port) && local.ha_port != port && local.mgmt_port != port) }
 }
 
 # Create new random API key to be provisioned in FortiGates.
@@ -217,7 +219,7 @@ resource "google_compute_instance" "fgt_vm" {
     for_each = [for indx in range(length(var.subnets)) : "port${indx + 1}"]
 
     content {
-      subnetwork = data.google_compute_subnetwork.connected[network_interface.value].name
+      subnetwork = data.google_compute_subnetwork.connected[network_interface.value].self_link
       nic_type   = local.nic_type
       network_ip = google_compute_address.priv["${network_interface.value}-${count.index}"].address
       dynamic "access_config" {
@@ -279,6 +281,7 @@ resource "google_compute_firewall" "allow_all" {
   allow {
     protocol = "all"
   }
+  project = one(regex("projects/([-a-z0-9]*)/global/networks", data.google_compute_subnetwork.connected[each.key].network))
 }
 
 resource "google_compute_firewall" "allow_mgmt" {
@@ -290,6 +293,7 @@ resource "google_compute_firewall" "allow_mgmt" {
   allow {
     protocol = "all"
   }
+  project = one(regex("projects/([-a-z0-9]*)/global/networks", data.google_compute_subnetwork.connected[local.mgmt_port].network))
 }
 
 resource "google_compute_firewall" "allow_hasync" {
@@ -301,6 +305,7 @@ resource "google_compute_firewall" "allow_hasync" {
   allow {
     protocol = "all"
   }
+  project = one(regex("projects/([-a-z0-9]*)/global/networks", data.google_compute_subnetwork.connected[local.ha_port].network))
 }
 
 

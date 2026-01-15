@@ -13,11 +13,11 @@ resource "google_compute_region_backend_service" "ilb_bes" {
   network = data.google_compute_subnetwork.connected[each.key].network
 
   backend {
-    group = google_compute_instance_group.fgt_umigs[0].self_link
+    group          = google_compute_instance_group.fgt_umigs[0].self_link
     balancing_mode = "CONNECTION"
   }
   backend {
-    group = google_compute_instance_group.fgt_umigs[1].self_link
+    group          = google_compute_instance_group.fgt_umigs[1].self_link
     balancing_mode = "CONNECTION"
   }
 
@@ -55,4 +55,5 @@ resource "google_compute_route" "outbound_routes" {
   network      = data.google_compute_subnetwork.connected[split("|", each.key)[0]].network
   next_hop_ilb = google_compute_forwarding_rule.ilb[split("|", each.key)[0]].self_link
   priority     = 100
+  project      = one(regex("projects/([-a-z0-9]*)/global/networks", data.google_compute_subnetwork.connected[split("|", each.key)[0]].network))
 }
