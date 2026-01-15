@@ -9,6 +9,7 @@ resource "google_compute_router" "nat_router" {
   name    = "${local.prefix}cr-cloudnat-${local.region_short}"
   region  = local.region
   network = data.google_compute_subnetwork.connected["port1"].network
+  project = one(regex("projects/([-a-z0-9]*)/global/networks", data.google_compute_subnetwork.connected["port1"].network))
 }
 
 resource "google_compute_router_nat" "cloud_nat" {
@@ -21,4 +22,5 @@ resource "google_compute_router_nat" "cloud_nat" {
     name                    = data.google_compute_subnetwork.connected["port1"].self_link
     source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
   }
+  project = one(regex("projects/([-a-z0-9]*)/global/networks", data.google_compute_subnetwork.connected["port1"].network))
 }
