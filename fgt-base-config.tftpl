@@ -35,87 +35,98 @@ end
 config system ha
     set group-name "gcp-group"
     set mode a-p
-    set hbdev "port3" 50
+    set hbdev "${hbdev_port}" 50
     set session-pickup enable
     set ha-mgmt-status enable
     config ha-mgmt-interfaces
         edit 1
-            set interface "port4"
+            set interface "${mgmt_port}"
             set gateway ${mgmt_gw}
         next
     end
     set override enable
     set priority ${ha_prio}
+    set password ${ha_password}
     set unicast-hb enable
     set unicast-hb-peerip ${unicast_peer_ip}
     set unicast-hb-netmask ${unicast_peer_netmask}
 end
+
 config system interface
-  edit port1
+%{ for port,addr in priv_ips ~}
+  edit ${port}
     set mode static
-    set ip ${ext_ip}/32
+    set ip ${addr}/32
+    %{ if port == mgmt_port ~}
+    set allowaccess ping ssh https
+    %{ else ~}
     set allowaccess ping
     set secondary-IP enable
+    %{ endif ~}
+    %{ if try(ilb_ips[port], "") != "" ~}
     config secondaryip
-%{ for name, eip in frontend_eips ~}
+      edit 0
+        set ip ${ilb_ips[port].address}/32
+        set allowaccess probe-response
+      next
+    end
+    %{ endif ~}
+  next
+%{ endfor ~}
+end
+
+config system interface
+  edit port1
+    config secondaryip
+    %{ for eip in frontend_eips ~}
       edit 0
         set ip ${eip}/32
         set allowaccess probe-response
       next
-%{ endfor ~}
+    %{ endfor }
     end
   next
-  edit port2
-    set mode static
-    set allowaccess ping
-    set ip ${int_ip}/32
-    set secondary-IP enable
-    config secondaryip
-      edit 0
-      set ip ${ilb_ip}/32
-      set allowaccess probe-response
-      next
-    end
-  next
-  edit port3
-    set mode static
-    set allowaccess ping
-    set ip ${hasync_ip}/32
-  next
-  edit port4
-    set mode static
-    set ip ${mgmt_ip}/32
-    set allowaccess ping https ssh fgfm
-  next
+end
+
 %{ if length(probe_loopback_ip) > 0 }
+config system interface
   edit "probe"
     set vdom "root"
     set ip ${probe_loopback_ip} 255.255.255.255
     set allowaccess probe-response
     set type loopback
   next
-%{ endif ~}
 end
-config router static
+%{ endif ~}
+
+config route static
+%{ for subnet, info in subnets ~}
+  %{ if info.dev!=mgmt_port ~}
+  edit 0
+    set dst ${subnet}
+    set gateway ${info.gw}
+    set device ${info.dev}
+    set comment ${info.name}
+  next
+  %{ endif ~}
+%{ endfor ~}
   edit 0
     set device port1
-    set gateway ${ext_gw}
+    set comment "default"
+    set gateway ${gateways["port1"]}
   next
+%{ for port,addr in ilb_ips ~}
   edit 0
-    set device port2
-    set dst ${int_cidr}
-    set gateway ${int_gw}
-  next
-  edit 0
-    set device port2
+    set device ${port}
+    set gateway ${gateways[port]}
     set dst 35.191.0.0/16
-    set gateway ${int_gw}
   next
   edit 0
-    set device port2
+    set device ${port}
+    set gateway ${gateways[port]}
     set dst 130.211.0.0/22
-    set gateway ${int_gw}
   next
+%{ endfor ~}
 end
 
 config firewall ippool
